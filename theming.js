@@ -448,8 +448,8 @@ const Transparency = new Lang.Class({
         let isNear = this._dockIsNear() || this._panelIsNear();
         if (isNear) {
             this._actor.set_style(this._opaque_style);
-            this._actor.remove_style_class_name('transparent')
-            this._actor.add_style_class_name('opaque');
+            this._dockActor.remove_style_class_name('transparent');
+            this._dockActor.add_style_class_name('opaque');
             if (this._panel._updateSolidStyle && this._adaptiveEnabled) {
                 if (this._settings.get_boolean('dock-fixed') || this._panelIsNear())
                     this._panel._addStyleClassName('solid');
@@ -459,8 +459,8 @@ const Transparency = new Lang.Class({
         }
         else {
             this._actor.set_style(this._transparent_style);
-            this._actor.remove_style_class_name('opaque');
-            this._actor.add_style_class_name('transparent')
+            this._dockActor.remove_style_class_name('opaque');
+            this._dockActor.add_style_class_name('transparent');
             if (this._panel._updateSolidStyle && this._adaptiveEnabled)
                 this._panel._removeStyleClassName('solid');
         }
