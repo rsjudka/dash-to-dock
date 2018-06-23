@@ -586,13 +586,13 @@ const Transparency = new Lang.Class({
         });
         Main.uiGroup.add_child(dummyObject);
 
-        dummyObject.add_style_class_name('opaque');
+        dummyObject.add_style_class_name('dummy-opaque');
         let themeNode = dummyObject.get_theme_node();
         this._opaqueAlpha = themeNode.get_background_color().alpha / 255;
         this._opaqueAlphaBorder = themeNode.get_border_color(0).alpha / 255;
         this._opaqueTransition = themeNode.get_transition_duration();
 
-        dummyObject.add_style_class_name('transparent');
+        dummyObject.add_style_class_name('dummy-transparent');
         themeNode = dummyObject.get_theme_node();
         this._transparentAlpha = themeNode.get_background_color().alpha / 255;
         this._transparentAlphaBorder = themeNode.get_border_color(0).alpha / 255;
