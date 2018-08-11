@@ -36,7 +36,8 @@ const RunningIndicatorStyle = {
     SEGMENTED: 4,
     SOLID: 5,
     CILIORA: 6,
-    METRO: 7
+    METRO: 7,
+    GTK: 8
 };
 
 /**
