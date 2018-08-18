@@ -669,51 +669,49 @@ const RunningIndicatorGTK = new Lang.Class({
     Extends: RunningIndicatorBase,
 
     _init: function(source, settings) {
-
-        this.parent(source, settings)
-
+        this.parent(source, settings);
 
         this._area = new St.DrawingArea({x_expand: true, y_expand: true});
-
-        // We draw for the bottom case and rotate the canvas for other placements
-        //set center of rotatoins to the center
         this._area.set_pivot_point(0.5, 0.5);
-        // prepare transformation matrix
         let m = new Cogl.Matrix();
         m.init_identity();
 
+        this._gradientDirection = 'vertical';
+        this._clearGradient = 'start';
+        this._coloredGradient = 'end';
         switch (this._side) {
-        case St.Side.TOP:
-            m.xx = -1;
-            m.rotate(180, 0, 0, 1);
-            break
-
-        case St.Side.BOTTOM:
-            // nothing
-            break;
-
-        case St.Side.LEFT:
-            m.yy = -1;
-            m.rotate(90, 0, 0, 1);
-            break;
-
-        case St.Side.RIGHT:
-            m.rotate(-90, 0, 0, 1);
-            break
+            case St.Side.TOP:
+                m.xx = -1;
+                m.rotate(180, 0, 0, 1);
+                this._clearGradient = 'end';
+                this._coloredGradient = 'start';
+                break;
+            case St.Side.BOTTOM:
+                // nothing
+                break;
+            case St.Side.LEFT:
+                m.yy = -1;
+                m.rotate(90, 0, 0, 1);
+                this._gradientDirection = 'horizontal';
+                this._clearGradient = 'end';
+                this._coloredGradient = 'start';
+                break;
+            case St.Side.RIGHT:
+                m.rotate(-90, 0, 0, 1);
+                this._gradientDirection = 'horizontal';
+                break;
         }
 
         this._area.set_transform(m);
-
         this._area.connect('repaint', Lang.bind(this, this._updateIndicator));
-
         this._source._iconContainer.add_child(this._area);
 
         let keys = ['custom-theme-running-dots-color',
-                   'custom-theme-running-dots-border-color',
-                   'custom-theme-running-dots-border-width',
-                   'custom-theme-customize-running-dots',
-                   'unity-backlit-items',
-                   'running-indicator-dominant-color'];
+            'custom-theme-running-dots-border-color',
+            'custom-theme-running-dots-border-width',
+            'custom-theme-customize-running-dots',
+            'unity-backlit-items',
+            'running-indicator-dominant-color'];
 
         keys.forEach(function(key) {
             this._signalsHandler.add([
@@ -724,13 +722,12 @@ const RunningIndicatorGTK = new Lang.Class({
         }, this);
     },
 
-    _updateCounterClass: function() {
+    _updateCounterClass: function () {
         if (this._area)
             this._area.queue_repaint();
     },
 
-     _computeStyle: function() {
-
+    _computeStyle: function() {
         let [width, height] = this._area.get_surface_size();
         this._width = height;
         this._height = width;
@@ -739,19 +736,16 @@ const RunningIndicatorGTK = new Lang.Class({
         this._borderWidth = 0;
         this._bodyColor = Clutter.color_from_string('lightblue')[1];
 
-        // Use customize style if requested
         if (this._settings.get_boolean('custom-theme-customize-running-dots')) {
             this._borderColor = Clutter.color_from_string(this._settings.get_string('custom-theme-running-dots-border-color'))[1];
             this._borderWidth = this._settings.get_int('custom-theme-running-dots-border-width');
-            this._bodyColor =  Clutter.color_from_string(this._settings.get_string('custom-theme-running-dots-color'))[1];
+            this._bodyColor = Clutter.color_from_string(this._settings.get_string('custom-theme-running-dots-color'))[1];
         }
 
-        // Define the radius as an arbitrary size, but keep large enough to account
-        // for the drawing of the border.
-        this._radius = this._width/35
-        this._padding = -1; // distance from the margin
-        this._spacing = this._radius + this._borderWidth; // separation between the dots
-     },
+        this._radius = this._width / 35;
+        this._padding = -1;
+        this._spacing = this._radius + this._borderWidth;
+    },
 
     _updateIndicator: function() {
         let cr = this._area.get_context();
@@ -762,19 +756,15 @@ const RunningIndicatorGTK = new Lang.Class({
     },
 
     _drawIndicator: function(cr) {
-        // Draw the required numbers of dots
         let n = Math.min(this._nWindows, 2);
 
         cr.setLineWidth(this._borderWidth);
         Clutter.cairo_set_source_color(cr, this._borderColor);
 
-        // draw for the bottom case:
-        cr.translate((this._width - (2*n)*this._radius - (n-1)*this._spacing)/2, this._height - this._padding);
+        cr.translate((this._width-(2*n)*this._radius-(n-1)*this._spacing)/2, this._height-this._padding);
         for (let i = 0; i < n; i++) {
             cr.newSubPath();
-            cr.arc((2*i+1)*this._radius + i*this._spacing, -this._radius - this._borderWidth/2, this._radius, 0, 2*Math.PI);
-            cr.newSubPath();
-            cr.arc((2*i+1)*this._radius + i*this._spacing, -this._radius - this._borderWidth/2, this._radius, 0, 2*Math.PI);
+            cr.arc((2*i+1)*this._radius+i*this._spacing, -this._radius-this._borderWidth/2, this._radius, 0, 2*Math.PI);
         }
 
         cr.strokePreserve();
@@ -783,59 +773,30 @@ const RunningIndicatorGTK = new Lang.Class({
     },
 
     _updateFocusClass: function() {
-        if (this._isFocused) {
+        if (this._isFocused)
             this._enableBacklight()
-        }
-        else {
+        else
             this._source._iconContainer.set_style(null);
-        }
     },
 
     _enableBacklight: function() {
-
-        function hex2rgba(hex, a=1) {
-            [r, g, b] = hex.match(/\w\w/g).map(x => parseInt(x,16))
-            return `rgba(${r},${g},${b},${a})`
-        }
-
-        // assume default at left
-        let gradientDirection = 'horizontal';
-        let clearGradient = 'end';
-        let coloredGradient = 'start';
-        switch (this._side) {
-            case St.Side.TOP:
-                gradientDirection = 'vertical';
-                break;
-            case St.Side.BOTTOM:
-                gradientDirection = 'vertical';
-                clearGradient = 'start';
-                coloredGradient = 'end';
-                break;
-            case St.Side.RIGHT:
-                gradientDirection = 'horizontal';
-                clearGradient = 'start';
-                coloredGradient = 'end';
-                break;
-        }
-
-        let colorPalette = this._dominantColorExtractor._getColorPalette();
+        let gradientColor = 'rgba(211, 211, 211, .5)';
         
-        // Fallback
-        if (colorPalette === null) {
-            this._source._iconContainer.set_style(
-                'background-gradient-direction:' + gradientDirection + ';' +
-                'background-gradient-' + clearGradient + ': rgba(0, 0, 0, 0);' +
-                'background-gradient-' + coloredGradient + ': rgba(211, 211, 211, .5);'
-            );
-
-        return;
+        let colorPalette = this._dominantColorExtractor._getColorPalette();
+        if (colorPalette) {
+            let [r, g, b] = colorPalette.original.match(/\w\w/g).map(x => parseInt(x, 16));
+            gradientColor = `rgba(${r}, ${g}, ${b}, .5)`;
         }
+        
+        let gradientStyle = `background-gradient-direction: ${this._gradientDirection};
+                             background-gradient-${this._clearGradient}: rgba(0, 0, 0, 0);
+                             background-gradient-${this._coloredGradient}: ${gradientColor}`;
+        this._source._iconContainer.set_style(gradientStyle);
+    },
 
-        this._source._iconContainer.set_style(
-            'background-gradient-direction:' + gradientDirection + ';' +
-            'background-gradient-' + clearGradient + ': rgba(0, 0, 0, 0);' +
-            'background-gradient-' + coloredGradient + ': ' + hex2rgba(colorPalette.original, .5) + ';'
-        );
+    destroy: function() {
+        this.parent();
+        this._area.destroy();
     }
 });
 
